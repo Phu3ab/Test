@@ -389,7 +389,7 @@ function itd(k) {
     const m = { Golden: "Gold-", Silver: "Silber-", Platinum: "Platin-" };
     return x[1] + (x[2] ? m[x[2]] : "") + (x[3] === "Selection" ? "Auswahl-Kit" : "Upgrade-Kit");
   }
-  if ((x = /^\[Unit Type( NextEra)?\] (\w+)$/.exec(k)))
+  if ((x = /^\[Unit Type( NextEra)?\] (.+)$/.exec(k)))
     return (
       "Einheit: " +
       ({
@@ -399,6 +399,10 @@ function itd(k) {
         Artillery: "Artillerie",
         Ranged: "Fernkämpfer",
         Random: "Zufällig",
+        Champion: "Held",
+        "Color Guard": "Fahnenwache",
+        "Military Drummer": "Militär-Trommler",
+        Rogue: "Agent",
       }[x[2]] || x[2]) +
       (x[1] ? " (nächstes)" : "")
     );
@@ -904,7 +908,11 @@ const skList = () =>
     const a = n[1],
       i = s[1],
       o = e == "n" ? !t : !!t;
-    return typeof a == "string" ? (o ? a.localeCompare(i) : i.localeCompare(a)) : o ? a - i : i - a;
+    const c = typeof a == "string" ? (o ? a.localeCompare(i) : i.localeCompare(a)) : o ? a - i : i - a;
+    if (c || e != "e") return c;
+    // Gleiche Effizienz (v. a. 0): absteigend nach Gesamtwert, dann nach Name
+    const bt = (r) => (typeof r[0] == "string" ? r : r[0]);
+    return tot(bt(s[0])) - tot(bt(n[0])) || nm(bt(n[0])).localeCompare(nm(bt(s[0])), "de");
   },
   skx = (e, t) => (e == "e" || e == "n" ? "" : ` · ${SKL(e)}: ${fmt(t)}`),
   skUI = (e) =>

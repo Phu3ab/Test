@@ -110,7 +110,30 @@ td + td {
 .g {
   color: #e07a7a;
 }
+
+#tgs {
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+#tgs button {
+  flex: 1;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+#tgs button::before {
+  content: "▾ ";
+}
+#tgs button.col::before {
+  content: "▸ ";
+}
+.hid {
+  display: none !important;
+}
 </style></head><body>
+<div id="tgs"><button data-tg="top" data-i18n="ui.tools">Werkzeuge</button><button data-tg="map" data-i18n="ui.map">Karte</button><button data-tg="bot" data-i18n="ui.panel">Listen</button><button id="tgall" data-i18n="ui.toggleAll">⇕ Abschnitte</button></div>
 <div id="top">
 <select id="era" title="Era" data-i18n-title="ui.eraTitle"></select><select id="lgs" title="Language" style="margin-left:auto"><option value="de">DE</option><option value="en">EN</option></select>
 <button data-t="hand" title="Info / scroll" data-i18n-title="ui.infoScroll">✋</button>
@@ -181,6 +204,10 @@ td + td {
     "cat.other": {"en": "Other", "de": "Sonstige"},
     "ui.thisEraOnly": {"en": "this era only", "de": "nur dieses Zeitalter"},
     "ui.values": {"en": "Values", "de": "Werte"},
+    "ui.tools": {"en": "Tools", "de": "Werkzeuge"},
+    "ui.map": {"en": "Map", "de": "Karte"},
+    "ui.panel": {"en": "Lists", "de": "Listen"},
+    "ui.toggleAll": {"en": "Sections", "de": "Abschnitte"},
     "tool.hand": {"en": "Tap = info, swipe = scroll", "de": "Tippen = Info, wischen = scrollen"},
     "tool.sel": {"en": "Tap = select / deselect, drag = frame, tap empty cell = clear", "de": "Tippen = auswählen / abwählen, ziehen = Rahmen, leeres Feld = Auswahl löschen"},
     "tool.move": {"en": "Tap a building and drag = move", "de": "Gebäude antippen und ziehen = verschieben"},
@@ -368,7 +395,7 @@ function itd(k) {
     const m = { Golden: "Gold-", Silver: "Silber-", Platinum: "Platin-" };
     return x[1] + (x[2] ? m[x[2]] : "") + (x[3] === "Selection" ? "Auswahl-Kit" : "Upgrade-Kit");
   }
-  if ((x = /^\[Unit Type( NextEra)?\] (\w+)$/.exec(k)))
+  if ((x = /^\[Unit Type( NextEra)?\] (.+)$/.exec(k)))
     return (
       "Einheit: " +
       ({
@@ -378,6 +405,10 @@ function itd(k) {
         Artillery: "Artillerie",
         Ranged: "Fernkämpfer",
         Random: "Zufällig",
+        Champion: "Held",
+        "Color Guard": "Fahnenwache",
+        "Military Drummer": "Militär-Trommler",
+        Rogue: "Agent",
       }[x[2]] || x[2]) +
       (x[1] ? " (nächstes)" : "")
     );
@@ -1750,6 +1781,35 @@ function langUI() {
   lvShow();
   draw();
 }
+// Einklappen: Werkzeugleiste, Karte, Listen-Panel und alle Abschnitte (Zustand merken)
+const TG = { top: ["top"], map: ["wrap", "st"], bot: ["bot"] };
+let tgS = {};
+try {
+  tgS = JSON.parse(localStorage.getItem("cityCol") || "{}") || {};
+} catch (e) {}
+function tgApply() {
+  for (const k in TG) {
+    TG[k].forEach((id) => $(id).classList.toggle("hid", !!tgS[k]));
+    document.querySelector(`[data-tg="${k}"]`).classList.toggle("col", !!tgS[k]);
+  }
+  try {
+    localStorage.setItem("cityCol", JSON.stringify(tgS));
+  } catch (e) {}
+}
+document.querySelectorAll("[data-tg]").forEach(
+  (b) =>
+    (b.onclick = () => {
+      tgS[b.dataset.tg] = !tgS[b.dataset.tg];
+      tgApply();
+      if (!tgS.map) fit();
+    }),
+);
+$("tgall").onclick = () => {
+  const ds = [...document.querySelectorAll("#bot details")],
+    open = ds.some((d) => d.open);
+  ds.forEach((d) => (d.open = !open));
+};
+tgApply();
 if (!load()) reset();
 if (!LS.L[LS.cur]) LS.L[LS.cur] = snap();
 hinit();
