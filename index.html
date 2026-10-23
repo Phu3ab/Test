@@ -1260,7 +1260,8 @@ function getRow(a, e) {
     "pl.incomplete": {"en": "(incomplete)", "de": "(unvollständig)"},
     "pl.ownPerLevel": {"en": "Own share per level", "de": "Eigenanteil je Stufe"},
     "pl.contribPerLevel": {"en": "Contribution per level", "de": "Beitrag je Stufe"},
-    "pl.copy": {"en": "Copy", "de": "Kopieren"}
+    "pl.copy": {"en": "Copy", "de": "Kopieren"},
+    "pl.perPlace": {"en": "Factor per place", "de": "Faktor pro Platz"}
   },
   "namesEn": {
     "AD": "Cathedral of Aachen",
@@ -2321,7 +2322,7 @@ function setView(n) {
 }
 function plInit() {
   const n = document.getElementById("plHost").attachShadow({ mode: "open" });
-  n.innerHTML = `<style>*{box-sizing:border-box}h1{font-size:1.3rem;margin:0 0 12px;color:var(--accent);letter-spacing:.5px}h2.section{font-size:1rem;color:var(--accent2);margin:0 0 10px}.collapsible-header{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px}.collapse-arrow{display:inline-block;font-size:.75rem;transition:transform .15s ease}.panel.collapsed .collapse-arrow{transform:rotate(-90deg)}.panel.collapsed .panel-body{display:none}.panel.collapsed h2.section{margin-bottom:0}.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}label.small{font-size:.78rem;color:var(--muted);display:block;margin-bottom:0}input[type=text],input[type=number]{background:#10141f;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:.85rem}.playerbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}.playerbar input{width:200px}.pl-buildings{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px}.pl-card{background:#1c2233;border:1px solid var(--border);border-radius:8px;padding:8px 10px}.pl-card .name{font-size:.72rem;color:var(--muted);margin-bottom:5px}.pl-card .lvl-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}.pl-card .lvl-row input{width:100%;text-align:center;padding:4px}.pl-card .chips{display:flex;gap:3px;margin-bottom:5px}.place-chip{flex:1;text-align:center;padding:3px 0;font-size:.68rem;font-weight:600;background:#10141f;border:1px solid var(--border);color:var(--muted);border-radius:4px;cursor:pointer;user-select:none}.place-chip.active{background:var(--accent2);color:#10141f;border-color:var(--accent2)}.pl-card .faktor-row input{width:100%;text-align:center;padding:3px;font-size:.78rem}.total-display{text-align:center;padding:6px 0 12px}.total-display .num{font-size:2.1rem;font-weight:700;color:var(--accent);display:block}.total-display .label{color:var(--muted);font-size:.8rem}.out{background:#10141f;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:Cascadia Code,Courier New,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin-bottom:12px}.out .lvl{color:var(--accent2)}.out .num{color:var(--accent)}.out .warn{color:#e07856}.lvl-block{background:#10141f;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-family:Cascadia Code,Courier New,monospace;font-size:.8rem;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.lvl-block .lvl-label{flex:0 0 auto;color:var(--accent2);min-width:58px}.lvl-block .txt{flex:1 1 auto;white-space:pre-wrap;word-break:break-word;line-height:1.5}.lvl-block .txt .lvl{color:var(--accent2)}.lvl-block .txt .num{color:var(--accent)}.lvl-block .txt .warn{color:#e07856}.lvl-copy{flex:0 0 auto;font-size:.68rem;padding:4px 8px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer}button{background:var(--accent);color:#1a1f2e;border:none;padding:9px 16px;border-radius:7px;font-weight:600;cursor:pointer;font-size:.9rem}button.danger{background:transparent;color:#e07856;border:1px solid #e07856}button:active{transform:scale(.97)}.resetrow{text-align:center;margin-top:8px}</style><h1 data-i18n="pl.title">Powerlevel-Rechner</h1>
+  n.innerHTML = `<style>*{box-sizing:border-box}h1{font-size:1.3rem;margin:0 0 12px;color:var(--accent);letter-spacing:.5px}h2.section{font-size:1rem;color:var(--accent2);margin:0 0 10px}.collapsible-header{cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px}.collapse-arrow{display:inline-block;font-size:.75rem;transition:transform .15s ease}.panel.collapsed .collapse-arrow{transform:rotate(-90deg)}.panel.collapsed .panel-body{display:none}.panel.collapsed h2.section{margin-bottom:0}.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}label.small{font-size:.78rem;color:var(--muted);display:block;margin-bottom:0}input[type=text],input[type=number]{background:#10141f;border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 8px;font-size:.85rem}.playerbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}.playerbar input{width:200px}.pl-buildings{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px}.pl-card{background:#1c2233;border:1px solid var(--border);border-radius:8px;padding:8px 10px}.pl-card .name{font-size:.72rem;color:var(--muted);margin-bottom:5px}.pl-card .lvl-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}.pl-card .lvl-row input{width:100%;text-align:center;padding:4px}.pl-card .chips{display:flex;gap:3px;margin-bottom:5px}.place-chip{flex:1;text-align:center;padding:3px 0;font-size:.68rem;font-weight:600;background:#10141f;border:1px solid var(--border);color:var(--muted);border-radius:4px;cursor:pointer;user-select:none}.place-chip.active{background:var(--accent2);color:#10141f;border-color:var(--accent2)}.pl-card .faktor-row input[type=number]{width:100%;text-align:center;padding:3px;font-size:.78rem}.pp-toggle{display:flex;align-items:center;gap:5px;margin-top:5px;font-size:.7rem;color:var(--muted);cursor:pointer}.pp-toggle input{width:auto}.pp-row{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:5px}.pp-cell span{display:block;text-align:center;font-size:.62rem;color:var(--muted)}.pp-cell input{width:100%;text-align:center;padding:3px 1px;font-size:.72rem}.total-display{text-align:center;padding:6px 0 12px}.total-display .num{font-size:2.1rem;font-weight:700;color:var(--accent);display:block}.total-display .label{color:var(--muted);font-size:.8rem}.out{background:#10141f;border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-family:Cascadia Code,Courier New,monospace;font-size:.8rem;line-height:1.6;white-space:pre-wrap;word-break:break-word;margin-bottom:12px}.out .lvl{color:var(--accent2)}.out .num{color:var(--accent)}.out .warn{color:#e07856}.lvl-block{background:#10141f;border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-family:Cascadia Code,Courier New,monospace;font-size:.8rem;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.lvl-block .lvl-label{flex:0 0 auto;color:var(--accent2);min-width:58px}.lvl-block .txt{flex:1 1 auto;white-space:pre-wrap;word-break:break-word;line-height:1.5}.lvl-block .txt .lvl{color:var(--accent2)}.lvl-block .txt .num{color:var(--accent)}.lvl-block .txt .warn{color:#e07856}.lvl-copy{flex:0 0 auto;font-size:.68rem;padding:4px 8px;background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:5px;cursor:pointer}button{background:var(--accent);color:#1a1f2e;border:none;padding:9px 16px;border-radius:7px;font-weight:600;cursor:pointer;font-size:.9rem}button.danger{background:transparent;color:#e07856;border:1px solid #e07856}button:active{transform:scale(.97)}.resetrow{text-align:center;margin-top:8px}</style><h1 data-i18n="pl.title">Powerlevel-Rechner</h1>
 <div class="playerbar">
 <label class="small" data-i18n="common.playerName">Spielername</label>
 <input type="text" id="playerNameInput" />
@@ -2345,8 +2346,11 @@ function plInit() {
     const l = o.rows[String(e)];
     if (!l) return null;
     const [r, d, m, v, s, h] = l,
-      w = typeof t == "number" && !isNaN(t) && t > 0 ? t : o.faktor,
-      b = [d, m, v, s, h].map((k) => Math.round(k * w)),
+      w = (j) => {
+        const q = Array.isArray(t) ? t[j] : t;
+        return typeof q == "number" && !isNaN(q) && q > 0 ? q : o.faktor;
+      },
+      b = [d, m, v, s, h].map((k, j) => Math.round(k * w(j))),
       B = r - b.reduce((k, C) => k + C, 0);
     return [...b, B];
   }
@@ -2356,14 +2360,25 @@ function plInit() {
     p = !1,
     u = {};
   function N() {
-    return { from: "", to: "", faktor: null, placeCount: 5 };
+    return { from: "", to: "", faktor: null, placeCount: 5, perPlace: false, faktoren: [null, null, null, null, null] };
   }
   function f(a) {
-    return (x[a] || (x[a] = N()), x[a]);
+    const e = x[a] || (x[a] = N());
+    (Array.isArray(e.faktoren) && e.faktoren.length === 5) || (e.faktoren = [null, null, null, null, null]);
+    return e;
   }
   function T(a) {
     const e = f(a);
     return typeof e.faktor == "number" && !isNaN(e.faktor) && e.faktor > 0 ? e.faktor : DATA[a].faktor;
+  }
+  function TP(a) {
+    const e = f(a),
+      b = T(a);
+    if (!e.perPlace || !Array.isArray(e.faktoren)) return b;
+    return [0, 1, 2, 3, 4].map((j) => {
+      const q = e.faktoren[j];
+      return typeof q == "number" && !isNaN(q) && q > 0 ? q : b;
+    });
   }
   function L(a) {
     const e = f(a);
@@ -2475,7 +2490,8 @@ function plInit() {
 <input type="number" min="0" placeholder="${tl("pl.to")}" value="${t.to}" data-abbr="${e}" data-field="to" />
 </div>
 <div class="chips">${l}</div>
-<div class="faktor-row"><input type="number" min="1" step="0.01" value="${o}" data-abbr="${e}" data-field="faktor" /></div>
+<div class="faktor-row"><input type="number" min="1" step="0.01" value="${o}" data-abbr="${e}" data-field="faktor" /><label class="pp-toggle"><input type="checkbox" data-abbr="${e}" data-field="perPlace"${t.perPlace ? " checked" : ""} /> ${tl("pl.perPlace")}</label></div>
+${t.perPlace ? `<div class="pp-row">${[0, 1, 2, 3, 4].map((d) => `<div class="pp-cell"><span>P${d + 1}</span><input type="number" min="0" step="0.01" placeholder="${o}" value="${typeof t.faktoren[d] == "number" ? t.faktoren[d] : ""}" data-abbr="${e}" data-field="pfaktor" data-n="${d}" /></div>`).join("")}</div>` : ""}
 `),
           a.appendChild(r));
       }),
@@ -2489,7 +2505,26 @@ function plInit() {
           const o = t.target.dataset.abbr,
             l = parseFloat(t.target.value.replace(",", ".")),
             r = f(o);
-          ((r.faktor = !isNaN(l) && l > 0 && Math.abs(l - DATA[o].faktor) > 1e-9 ? l : null), g(), y());
+          ((r.faktor = !isNaN(l) && l > 0 && Math.abs(l - DATA[o].faktor) > 1e-9 ? l : null),
+            f(o).perPlace && S(),
+            g(),
+            y());
+        });
+      }),
+      a.querySelectorAll('input[data-field="perPlace"]').forEach((e) => {
+        e.addEventListener("change", (t) => {
+          const o = f(t.target.dataset.abbr);
+          ((o.perPlace = t.target.checked), S(), g(), y());
+        });
+      }),
+      a.querySelectorAll('input[data-field="pfaktor"]').forEach((e) => {
+        e.addEventListener("change", (t) => {
+          const o = f(t.target.dataset.abbr),
+            l = parseFloat(t.target.value.replace(",", "."));
+          (Array.isArray(o.faktoren) || (o.faktoren = [null, null, null, null, null]),
+            (o.faktoren[parseInt(t.target.dataset.n, 10)] = !isNaN(l) && l > 0 ? l : null),
+            g(),
+            y());
         });
       }),
       a.querySelectorAll(".place-chip").forEach((e) => {
@@ -2530,7 +2565,7 @@ function plInit() {
         const t = f(e),
           o = parseInt(t.from, 10),
           l = parseInt(t.to, 10),
-          r = T(e),
+          r = TP(e),
           d = !!u[e];
         let m = 0,
           v = !1;
@@ -2615,8 +2650,8 @@ function tab(n) {
     (document.getElementById("feWrap").hidden = n != "fe" && n != "cp"),
     (document.getElementById("fe").hidden = n != "fe"),
     (document.getElementById("cpf").hidden = n != "cp"),
-    n == "fe" && !feOn && ((feOn = 1), (document.getElementById("fe").src = "foeff.html")),
-    n == "cp" && !cpOn && ((cpOn = 1), (document.getElementById("cpf").src = "city.html")),
+    n == "fe" && !feOn && window.parent === window && ((feOn = 1), (document.getElementById("fe").src = "foeff.html")),
+    n == "cp" && !cpOn && window.parent === window && ((cpOn = 1), (document.getElementById("cpf").src = "city.html")),
     n != "fe" && n != "cp" && (i18nSync(), setView(n)),
     document.querySelectorAll("#tabs button").forEach((i) => i.classList.toggle("on", i.dataset.t == n)));
   try {

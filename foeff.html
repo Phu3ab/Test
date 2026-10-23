@@ -192,7 +192,6 @@ h2 {
     "f.areaStreet": {"en": "Area incl. street", "de": "Fläche inkl. Straße"},
     "f.avgEff": {"en": "Ø weighted efficiency", "de": "Ø gewichtete Effizienz"},
     "f.sums": {"en": "Totals", "de": "Summen"},
-    "f.ph.itemFilter": {"en": "Filter by produced item …", "de": "Nach produziertem Item filtern …"},
     "f.unrecognized": {"en": "Not recognized ({n})", "de": "Nicht erkannt ({n})"},
     "f.noSize": {"en": "no size (only in totals) · ", "de": "ohne Größe (nur in Summen) · "},
     "f.sum": {"en": "Total", "de": "Summe"},
@@ -938,7 +937,7 @@ function list() {
         (!fe || evK(a) == fe) &&
         (!fy || yrK(a) == fy) &&
         (!ls("fnl", 0) || !/\bL:/.test(a[2])) &&
-        (!e || (nm(a) + a[1] + a[2] + a[3] + (IT[a[0]] || []).join(" ")).toLowerCase().includes(e)),
+        (!e || hay(a).includes(e)),
     )
     .map((a) => [a, skv(a, t)])
     .sort(skc(t, ls("sd:eff", 0)));
@@ -1044,6 +1043,7 @@ function vA() {
 // Gemeinsame Helfer: Sprache (LG), Namen, Wiki-Links, Item-Summen, Zeitalter-/Sprachauswahl
 // Teil 4/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
 D.b.forEach((e, t) => (e.i = t));
+let kcDe = null;
 const nm = (e) => (N[e[0]] || [])[LG === "de" ? 1 : 0] || e[1],
   fold = (e) =>
     e
@@ -1107,13 +1107,30 @@ const WE = "https://en.wiki.forgeofempires.com/index.php?",
     `<a href="${u}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--a);text-decoration:none">${t} ↗</a>`,
   wl = (e) => (LG === "en" ? wla(wikiE(e), "Wiki EN") : wla(wiki(e), "Wiki DE")),
   esc = (e) => String(e).replace(/[&<>"]/g, (t) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[t]),
+  // n/d als ganze Items + Rest: 393/30 -> 13+3/30 (unter einem ganzen Item unverändert)
+  fq = (n, d) => {
+    const w = Math.floor(n / d + 1e-9);
+    if (!(d > 0) || w < 1) return `${fmt(n, 2)}/${d}`;
+    const r = Math.round((n - w * d) * 100) / 100;
+    return r ? `${fmt(w, 0)}+${fmt(r, 2)}/${d}` : fmt(w, 0);
+  },
+  // Kit-Inhalt (data/KC.js): Auswahl-Gebäude unter der Kit-Zeile, in der gewählten Sprache
+  kcRow = (k) => {
+    const c = window.KC && window.KC[k];
+    if (!c) return "";
+    if (!kcDe) {
+      kcDe = {};
+      for (const id in N) kcDe[N[id][0]] = N[id][1];
+    }
+    return `<div class="row"><span class="m" style="padding-left:12px">↳ ${c.map((b) => esc(LG === "de" ? kcDe[b] || b : b)).join(" / ")}</span></div>`;
+  },
   itRows = (t) =>
     t
       .map((n) => {
         const s = n.lastIndexOf(" – ");
         return s > 0
-          ? `<div class="row"><span class="m">${esc(n.slice(0, s))}</span><span>${esc(n.slice(s + 3))}</span></div>`
-          : `<div class="row"><span class="m">${esc(n)}</span></div>`;
+          ? `<div class="row"><span class="m">${esc(n.slice(0, s))}</span><span>${esc(n.slice(s + 3).replace(/^(\d+(?:\.\d+)?)\/(\d+)$/, (m, a, b) => (+a >= +b ? fq(+a, +b) : m)))}</span></div>${kcRow(n.slice(0, s))}`
+          : `<div class="row"><span class="m">${esc(n)}</span></div>${kcRow(n)}`;
       })
       .join(""),
   itl = (e) => {
@@ -1180,6 +1197,15 @@ const eraN = (k) => (LG === "de" ? ERD[k] : ER.e[k]),
   ($("#lg").onchange = (e) => {
     ((LG = e.target.value), sv("lang", LG), applyI18n(), navUI(), eraOpts(), draw());
   }));
+
+// Suchtext eines Gebäudes (klein geschrieben): Name, Felder, Event, Items – englisch UND in der aktuellen Sprache übersetzt (Cache je Sprache)
+const HAY = {};
+function hay(a) {
+  const k = LG + a[0];
+  if (HAY[k] != null) return HAY[k];
+  const t = [nm(a), a[1], a[2], a[3], ...(IT[a[0]] || [])];
+  return (HAY[k] = [...t, ...t.map((v) => trn(String(v)))].join(" ").toLowerCase());
+}
 </script><script>
 // Tabs „Stadt“ und „Inventar“ (vImp), Import-Bericht (rIm), LG-Abschnitt, Item-Summe
 // Teil 5/8 von foeff-app.js (früher eine Datei); Ladereihenfolge: siehe <script>-Tags in foeff.html.
@@ -1269,15 +1295,10 @@ function itSum(e) {
         if (a.length == 1) {
           const i = a[0],
             o = s.F[i];
-          return n(
-            s.n,
-            s.n,
-            `${fmt(o + s.W * i, 2)}/${i}`,
-            s.W ? `${fmt(o, 2)}/${i} + ${tl("f.plusWhole", { n: fmt(s.W, 2) })}` : "",
-          );
+          return n(s.n, s.n, fq(o + s.W * i, +i), s.W ? `${fq(o, +i)} + ${tl("f.plusWhole", { n: fmt(s.W, 2) })}` : "");
         }
         return (
-          a.map((i) => n(s.n, s.n, `${fmt(s.F[i], 2)}/${i}`)).join("") +
+          a.map((i) => n(s.n, s.n, fq(s.F[i], +i))).join("") +
           (s.W ? n(s.n, s.n + " " + tl("f.whole"), fmt(s.W, 2)) : "")
         );
       })
@@ -1394,11 +1415,12 @@ function rIm(e) {
           "</div>"
         : "") +
       itSum(c) +
-      `${d ? lgSec(m, j, d) : ""}<h2>${tl("f.tab.eff")}</h2><input id="itf" list="itnames" placeholder="${tl("f.ph.itemFilter")}" value="${esc(ls("itf_" + e, ""))}" style="width:100%"><datalist id="itnames">${Object.values(
+      `${d ? lgSec(m, j, d) : ""}<h2>${tl("f.tab.eff")}</h2><input id="itf" list="itnames" placeholder="${tl("f.ph.search")}" value="${esc(ls("itf_" + e, ""))}" style="width:100%"><datalist id="itnames">${Object.values(
         c,
       )
-        .map((r) => r.n)
-        .sort()
+        .map((r) => trn(r.n))
+        .filter((r, i, a) => a.indexOf(r) === i)
+        .sort((a, b) => a.localeCompare(b))
         .map((r) => `<option value="${esc(r)}">`)
         .join("")}</datalist>${skUI(e)}<div id="gl"></div>` +
       (n.length ? `<h2>${tl("f.unrecognized", { n: n.length })}</h2><div class="card m">${n.join("<br>")}</div>` : ""),
@@ -1407,11 +1429,7 @@ function rIm(e) {
   const _ = ([r, p, v, g]) =>
       `<div class="card"><div class="row"><b>${p}× ${nm(r)}</b><span class="e">${g ? fmt(v) : "–"}</span></div><div class="m">${g ? r[4] + " · " : tl("f.noSize")}${tl("f.sum")} ${fmt(p * tot(r))}${skx(S, skv(r, S, p))}${r[0].startsWith("csv:") ? "" : " · " + wl(r)}</div>${itl(r)}</div>`,
     u = $("#itf"),
-    w = (r, p) =>
-      (IT[r[0][0]] || []).some((v) => {
-        const g = v.lastIndexOf(" – ");
-        return (g > 0 ? v.slice(0, g) : v).toLowerCase().includes(p);
-      }),
+    w = (r, p) => hay(r[0]).includes(p),
     y = () => {
       const r = u.value.trim().toLowerCase();
       (sv("itf_" + e, u.value), (S = ls("sk:" + e, "e")));
@@ -1461,7 +1479,7 @@ function rIm(e) {
     document.querySelectorAll("#o [data-q]").forEach(
       (r) =>
         (r.onclick = () => {
-          ((u.value = r.dataset.q), y(), u.scrollIntoView({ block: "center", behavior: "smooth" }));
+          ((u.value = trn(r.dataset.q)), y(), u.scrollIntoView({ block: "center", behavior: "smooth" }));
         }),
     ),
     y());
