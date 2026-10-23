@@ -1115,31 +1115,42 @@ const WE = "https://en.wiki.forgeofempires.com/index.php?",
     return r ? `${fmt(w, 0)}+${fmt(r, 2)}/${d}` : fmt(w, 0);
   },
   // Kit-Inhalt (data/KC.js): Auswahl-Gebäude unter der Kit-Zeile, in der gewählten Sprache
-  kcRow = (k) => {
-    const c = window.KC && window.KC[k];
+  kcRow = (k, e) => {
+    let c = window.KC && window.KC[k];
+    // Objekt statt Liste: Inhalt hängt vom produzierenden Gebäude ab (Schlüssel = englischer Name ohne Stufenzahl)
+    if (c && !Array.isArray(c)) c = c[e && N[e[0]] ? N[e[0]][0].replace(/ \d+$/, "") : ""];
     if (!c) return "";
     if (!kcDe) {
       kcDe = {};
       for (const id in N) kcDe[N[id][0]] = N[id][1];
     }
-    return `<div class="row"><span class="m" style="padding-left:12px">↳ ${c.map((b) => esc(LG === "de" ? kcDe[b] || b : b)).join(" / ")}</span></div>`;
+    const out = [];
+    for (const b of c) {
+      const x = LG === "de" ? kcDe[b] || b : b,
+        m = /^(.*) (\d+)$/.exec(x),
+        q = out[out.length - 1];
+      if (m && q && q.b === m[1] && q.to + 1 === +m[2]) q.to = +m[2];
+      else out.push(m ? { b: m[1], from: +m[2], to: +m[2] } : { t: x });
+    }
+    const txt = out.map((o) => o.t || (o.from === o.to ? `${o.b} ${o.from}` : `${o.b} ${o.from}–${o.to}`));
+    return `<div class="row"><span class="m" style="padding-left:12px">↳ ${esc(txt.join(" / "))}</span></div>`;
   },
-  itRows = (t) =>
+  itRows = (t, e) =>
     t
       .map((n) => {
         const s = n.lastIndexOf(" – ");
         return s > 0
-          ? `<div class="row"><span class="m">${esc(n.slice(0, s))}</span><span>${esc(n.slice(s + 3).replace(/^(\d+(?:\.\d+)?)\/(\d+)$/, (m, a, b) => (+a >= +b ? fq(+a, +b) : m)))}</span></div>${kcRow(n.slice(0, s))}`
-          : `<div class="row"><span class="m">${esc(n)}</span></div>${kcRow(n)}`;
+          ? `<div class="row"><span class="m">${esc(n.slice(0, s))}</span><span>${esc(n.slice(s + 3).replace(/^(\d+(?:\.\d+)?)\/(\d+)$/, (m, a, b) => (+a >= +b ? fq(+a, +b) : m)))}</span></div>${kcRow(n.slice(0, s), e)}`
+          : `<div class="row"><span class="m">${esc(n)}</span></div>${kcRow(n, e)}`;
       })
       .join(""),
   itl = (e) => {
     const t = IT[e[0]];
-    return t && t.length ? `<div class="it">${itRows(t)}</div>` : "";
+    return t && t.length ? `<div class="it">${itRows(t, e)}</div>` : "";
   },
   items = (e) => {
     const t = iL(e[0], EI);
-    return !t || !t.length ? "" : `<h2>${tl("f.prodItems")}</h2>${itRows(t)}`;
+    return !t || !t.length ? "" : `<h2>${tl("f.prodItems")}</h2>${itRows(t, e)}`;
   },
   PAIR = (e) => (e >= 24 && e < 40 ? ((e - 24) % 2 ? e - 1 : e + 1) : -1),
   wsum = (e) => e.reduce((t, n) => t + W[n], 0),
