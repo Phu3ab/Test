@@ -190,7 +190,6 @@ h2 {
     "f.kits.ph": {"en": "Search kit, building or content …", "de": "Suche Kit, Gebäude oder Inhalt …"},
     "f.kits.content": {"en": "Content", "de": "Inhalt"},
     "f.kits.from": {"en": "Produced by", "de": "Produziert von"},
-    "f.kits.lvl": {"en": "Level", "de": "Stufe"},
     "f.kits.unknown": {"en": "Content not recorded", "de": "Inhalt nicht erfasst"},
     "f.kits.count": {"en": "{n} kits", "de": "{n} Kits"},
     "f.error": {"en": "Error: ", "de": "Fehler: "},
@@ -795,11 +794,11 @@ const area = (e) => {
   },
   T = {
     eff: "f.tab.eff",
+    kits: "f.tab.kits",
     city: "f.tab.city",
     inv: "f.tab.inv",
     al: "f.tab.al",
     tr: "f.tab.tr",
-    kits: "f.tab.kits",
     w: "f.tab.w",
     a: "f.tab.a",
   },
@@ -1172,10 +1171,11 @@ const WE = "https://en.wiki.forgeofempires.com/index.php?",
   itRows = (t, e) =>
     t
       .map((n) => {
-        const s = n.lastIndexOf(" – ");
+        const s = n.lastIndexOf(" – "),
+          kn = kitName(s > 0 ? n.slice(0, s) : n, e && N[e[0]] ? N[e[0]][0] : "");
         return s > 0
-          ? `<div class="row"><span class="m${kitCls(n.slice(0, s))}">${esc(n.slice(0, s))}</span><span>${esc(n.slice(s + 3).replace(/^(\d+(?:\.\d+)?)\/(\d+)$/, (m, a, b) => (+a >= +b ? fq(+a, +b) : m)))}</span></div>${kcRow(n.slice(0, s), e)}`
-          : `<div class="row"><span class="m${kitCls(n)}">${esc(n)}</span></div>${kcRow(n, e)}`;
+          ? `<div class="row"><span class="m${kitCls(kn)}">${esc(kn)}</span><span>${esc(n.slice(s + 3).replace(/^(\d+(?:\.\d+)?)\/(\d+)$/, (m, a, b) => (+a >= +b ? fq(+a, +b) : m)))}</span></div>${kcRow(n.slice(0, s), e)}`
+          : `<div class="row"><span class="m${kitCls(kn)}">${esc(kn)}</span></div>${kcRow(n, e)}`;
       })
       .join(""),
   itl = (e) => {
@@ -2051,114 +2051,116 @@ function rAl() {
   );
 }
 </script><script>
-// Tab „Kits“: Suche nach produzierten Kits – Inhalt (je Stufe) und produzierende Gebäude
+// Tab „Kits“: Suche nach produzierten Kits – Inhalt und produzierende Gebäude, jedes Gebäude einzeln und antippbar
 // Teil 7b/8; muss vor foeff-tab-trials.js geladen werden (dort steht der Start-Aufruf draw()).
 let kq = "",
-  kitIdx = null;
-// Index: Kit (englischer Name) -> { src: [{id, fam, lvl, amt, ev}] } aus den Item-Zeilen aller Gebäude (IT)
+  kitIdx = null,
+  bIdx = null;
+// Anzeigename eines Kits je produzierendem Gebäude (nur Anzeige; Daten/Werte bleiben unter dem Original-Namen)
+const KIT_ALIAS = {
+  "Lagoon Hideout Selection Kit": {
+    "Siren's Treasure Rock": "Lagoon Hold Silver Selection Kit",
+    "Enchanted Siren's Treasure Rock": "Lagoon Stronghold Golden Selection Kit",
+  },
+};
+const kitName = (k, enName) => (KIT_ALIAS[k] && KIT_ALIAS[k][enName]) || k,
+  // Gebäude-Name (EN) -> Index in D.b (für det())
+  bIndex = () => {
+    if (!bIdx) {
+      bIdx = new Map();
+      D.b.forEach((b, i) => N[b[0]] && !bIdx.has(N[b[0]][0]) && bIdx.set(N[b[0]][0], i));
+    }
+    return bIdx;
+  },
+  bRow = (en, de, i, right) =>
+    `<div class="row"${i != null ? ` style="cursor:pointer" onclick="det(${i})"` : ""}><span class="m">${esc(LG === "de" ? de : en)}${right.ev ? ` · ${esc(evN(right.ev))}` : ""}</span>${right.amt ? `<span>${esc(right.amt)}</span>` : ""}</div>`;
+// Index: Kit (Anzeigename EN) -> Quellen [{id, en, de, ev, amt, orig}]
 function kitIndex() {
   if (kitIdx) return kitIdx;
-  const bm = new Map(D.b.map((b) => [b[0], b])),
-    m = new Map();
-  for (const id in IT) {
-    const b = bm.get(id),
-      n = N[id];
-    if (!b || !n || isHid(b)) continue;
-    for (const l of IT[id]) {
+  const m = new Map();
+  D.b.forEach((b, i) => {
+    const n = N[b[0]];
+    if (!n || isHid(b) || !IT[b[0]]) return;
+    for (const l of IT[b[0]]) {
       const x = /^(.+ Kit) – (.+)$/.exec(l);
       if (!x) continue;
-      const lv = /^(.*?) (\d+)$/.exec(n[0]),
-        de = /^(.*?) (\d+)$/.exec(n[1] || n[0]);
-      if (!m.has(x[1])) m.set(x[1], []);
-      m.get(x[1]).push({
-        fam: lv ? lv[1] : n[0],
-        famDe: de ? de[1] : n[1] || n[0],
-        lvl: lv ? +lv[2] : 0,
-        amt: x[2],
-        ev: b[3],
-      });
+      const k = kitName(x[1], n[0]);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push({ i, en: n[0], de: n[1] || n[0], ev: b[3], amt: kitAmt(x[2]), orig: x[1] });
     }
-  }
+  });
   return (kitIdx = m);
 }
-const kitAmt = (a) => {
+function kitAmt(a) {
   const x = /^(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)$/.exec(a);
   return x ? fq(+x[1], +x[2]) : a;
-};
-// Gebäude-Stufen als „Name: Stufe 1, 2, 3“ (jede Stufe einzeln)
-function kitLevels(names) {
+}
+function kitDeMap() {
   if (!kcDe) {
     kcDe = {};
     for (const id in N) kcDe[N[id][0]] = N[id][1];
   }
-  const g = [];
-  for (const b of names) {
-    const x = LG === "de" ? kcDe[b] || b : b,
-      m = /^(.*) (\d+)$/.exec(x),
-      q = g[g.length - 1];
-    if (m && q && q.b === m[1]) q.l.push(+m[2]);
-    else g.push(m ? { b: m[1], l: [+m[2]] } : { b: x, l: [] });
+  return kcDe;
+}
+// Inhalt eines Kits: Liste englischer Gebäudenamen (aus data/KC.js; Objekt = je nach produzierendem Gebäude)
+function kitContent(k, src) {
+  const kc = window.KC && window.KC[k];
+  if (Array.isArray(kc)) return [{ list: kc }];
+  const out = [];
+  for (const s of src) {
+    const o = window.KC && window.KC[s.orig];
+    if (!o || Array.isArray(o)) continue;
+    const fam = s.en.replace(/ \d+$/, ""),
+      c = o[fam];
+    if (c && !out.some((x) => x.fam === fam)) out.push({ fam, famDe: s.de.replace(/ \d+$/, ""), list: c });
   }
-  return g.map((o) => (o.l.length ? `${esc(o.b)} · ${tl("f.kits.lvl")} ${o.l.join(", ")}` : esc(o.b)));
+  return out;
 }
 function kitCard(k, src) {
-  const kc = window.KC && window.KC[k],
-    de = LG === "de",
+  const de = LG === "de",
+    bi = bIndex(),
+    dm = kitDeMap(),
     name = de ? itd(k) || k : k,
-    groups = new Map();
-  for (const s of src) {
-    const key = s.fam + "|" + s.amt;
-    if (!groups.has(key)) groups.set(key, { ...s, lvls: [] });
-    s.lvl && groups.get(key).lvls.push(s.lvl);
-  }
-  const blk = (c) =>
-    c
-      ? kitLevels(c)
-          .map((t) => `<div class="m" style="padding-left:12px">↳ ${t}</div>`)
+    cont = kitContent(k, src),
+    cRow = (b) => bRow(b, dm[b] || b, bi.has(b) ? bi.get(b) : null, {}),
+    cHtml = cont.length
+      ? cont
+          .map(
+            (c) =>
+              (c.fam ? `<div class="m" style="margin-top:4px">${esc(de ? c.famDe : c.fam)}:</div>` : "") +
+              c.list.map(cRow).join(""),
+          )
           .join("")
-      : `<div class="m" style="padding-left:12px">${tl("f.kits.unknown")}</div>`;
-  const srcHtml = [...groups.values()]
-    .sort((a, b) => a.fam.localeCompare(b.fam))
-    .map((g) => {
-      const l = g.lvls.sort((a, b) => a - b),
-        lv = l.length ? ` · ${tl("f.kits.lvl")} ${l.join(", ")}` : "",
-        ev = g.ev ? ` · ${esc(evN(g.ev))}` : "",
-        sub = kc && !Array.isArray(kc) ? blk(kc[g.fam]) : "";
-      return `<div class="row"><span class="m">${esc(de ? g.famDe : g.fam)}${lv}${ev}</span><span>${esc(kitAmt(g.amt))}</span></div>${sub}`;
-    })
-    .join("");
-  return `<div class="card"><div class="row"><b class="${kitCls(k).trim()}">${esc(name)}</b></div>${
-    kc && Array.isArray(kc)
-      ? `<h2>${tl("f.kits.content")}</h2>${blk(kc)}`
-      : kc
-        ? ""
-        : `<div class="m">${tl("f.kits.unknown")}</div>`
-  }<h2>${tl("f.kits.from")}</h2>${srcHtml}</div>`;
+      : `<div class="m">${tl("f.kits.unknown")}</div>`,
+    sHtml = src
+      .slice()
+      .sort((a, b) => a.en.localeCompare(b.en, "en", { numeric: true }))
+      .map((s) => bRow(s.en, s.de, s.i, s))
+      .join("");
+  return `<div class="card"><div class="row"><b class="${kitCls(k).trim()}">${esc(name)}</b></div><h2>${tl("f.kits.content")}</h2>${cHtml}<h2>${tl("f.kits.from")}</h2>${sHtml}</div>`;
 }
 function kitList() {
   const e = kq.toLowerCase().trim(),
-    idx = kitIndex();
-  if (!kcDe) {
-    kcDe = {};
-    for (const id in N) kcDe[N[id][0]] = N[id][1];
-  }
+    idx = kitIndex(),
+    dm = kitDeMap(),
+    kn = (k) => (LG === "de" ? itd(k) || k : k);
   const all = [...idx.keys()]
     .filter((k) => {
       if (!e) return true;
-      const kc = window.KC && window.KC[k],
-        c = kc ? (Array.isArray(kc) ? kc : Object.values(kc).flat()) : [],
-        h = [k, itd(k) || "", ...idx.get(k).flatMap((s) => [s.fam, s.famDe]), ...c, ...c.map((b) => kcDe[b] || "")];
+      const src = idx.get(k),
+        c = kitContent(k, src).flatMap((x) => x.list),
+        h = [k, itd(k) || "", ...src.flatMap((s) => [s.en, s.de]), ...c, ...c.map((b) => dm[b] || "")];
       return h.join("\n").toLowerCase().includes(e);
     })
-    .sort((a, b) => (LG === "de" ? itd(a) || a : a).localeCompare(LG === "de" ? itd(b) || b : b, LG));
+    .sort((a, b) => kn(a).localeCompare(kn(b), LG));
   setHtml(
     $("#kl"),
     `<div class="m">${tl("f.kits.count", { n: all.length })}</div>` +
       all
-        .slice(0, 60)
+        .slice(0, 40)
         .map((k) => kitCard(k, idx.get(k)))
         .join("") +
-      (all.length > 60 ? `<div class="m">${tl("f.more", { n: all.length - 60 })}</div>` : ""),
+      (all.length > 40 ? `<div class="m">${tl("f.more", { n: all.length - 40 })}</div>` : ""),
   );
 }
 function vKits() {
